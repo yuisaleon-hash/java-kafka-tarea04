@@ -1,19 +1,14 @@
 services:
-  # ZooKeeper service
   zookeeper:
     image: confluentinc/cp-zookeeper:7.3.2
     container_name: zookeeper
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
-      ZOOKEEPER_TICK_TIME: 2000
     ports:
       - "2181:2181"
-    volumes:
-      - zookeeper_data:/var/lib/zookeeper/data
     networks:
       - kafka-network
 
-  # Kafka service
   kafka:
     image: confluentinc/cp-kafka:7.3.2
     container_name: kafka
@@ -30,15 +25,10 @@ services:
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
-      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
-    volumes:
-      - kafka_data:/var/lib/kafka/data
     networks:
       - kafka-network
 
-  # Kafka UI para administración
   kafka-ui:
     image: provectuslabs/kafka-ui:latest
     container_name: kafka-ui
@@ -53,35 +43,26 @@ services:
     networks:
       - kafka-network
 
-  # Productor Java
   producer:
     build: .
     container_name: kafka-producer
     depends_on:
       - kafka
-    entrypoint: ["java", "-jar", "/app/producer.jar"]
-    tty: true
     stdin_open: true
+    tty: true
+    command: ["/app/producer.jar"]   # ✅ CORREGIDO
     networks:
       - kafka-network
 
-  # Consumidor Java
   consumer:
     build: .
     container_name: kafka-consumer
     depends_on:
       - kafka
-    entrypoint: ["java", "-jar", "/app/consumer.jar"]
-    tty: true
+    command: ["/app/consumer.jar"]   # ✅ CORREGIDO
     networks:
       - kafka-network
 
 networks:
   kafka-network:
     driver: bridge
-
-volumes:
-  zookeeper_data:
-    driver: local
-  kafka_data:
-    driver: local

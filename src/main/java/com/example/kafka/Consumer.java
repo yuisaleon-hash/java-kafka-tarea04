@@ -1,10 +1,9 @@
-// Consumer.java
 package com.example.kafka;
 
 import org.apache.kafka.clients.consumer.ConsumerConfig;
-import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.common.serialization.StringDeserializer;
 
 import java.time.Duration;
@@ -12,49 +11,33 @@ import java.util.Collections;
 import java.util.Properties;
 
 public class Consumer {
-    private static final String BOOTSTRAP_SERVERS = "kafka:9092";
-    private static final String TOPIC = "demo-topic";
-    private static final String GROUP_ID = "kafka-demo-group";
 
     public static void main(String[] args) {
-        // Configurar propiedades del consumidor
-        Properties properties = new Properties();
-        properties.setProperty(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, BOOTSTRAP_SERVERS);
-        properties.setProperty(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
-        properties.setProperty(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
-        properties.setProperty(ConsumerConfig.GROUP_ID_CONFIG, GROUP_ID);
-        properties.setProperty(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
 
-        // Crear el consumidor
-        KafkaConsumer<String, String> consumer = new KafkaConsumer<>(properties);
+        // 🔧 Configuración Kafka
+        Properties props = new Properties();
+        props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, "kafka:9092");
+        props.put(ConsumerConfig.GROUP_ID_CONFIG, "grupo-1");
+        props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
+        props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
+        props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
+
+        // Crear consumer
+        KafkaConsumer<String, String> consumer = new KafkaConsumer<>(props);
 
         // Suscribirse al topic
-        consumer.subscribe(Collections.singletonList(TOPIC));
+        consumer.subscribe(Collections.singletonList("test-topic"));
 
-        System.out.println("===== KAFKA CONSUMER DEMO =====");
-        System.out.println("Escuchando mensajes desde el topic: " + TOPIC);
-        System.out.println("Presiona Ctrl+C para salir...");
+        System.out.println("👂 Consumer escuchando...");
 
-        try {
-            // Bucle para escuchar mensajes continuamente
-            while (true) {
-                ConsumerRecords<String, String> records = consumer.poll(Duration.ofMillis(100));
+        // Loop infinito
+        while (true) {
+            ConsumerRecords<String, String> records =
+                    consumer.poll(Duration.ofMillis(100));
 
-                for (ConsumerRecord<String, String> record : records) {
-                    System.out.println("Mensaje recibido: " +
-                            "Topic: " + record.topic() + ", " +
-                            "Partition: " + record.partition() + ", " +
-                            "Offset: " + record.offset() + ", " +
-                            "Timestamp: " + record.timestamp() + ", " +
-                            "Value: " + record.value());
-                }
+            for (ConsumerRecord<String, String> record : records) {
+                System.out.println("📩 Mensaje recibido: " + record.value());
             }
-        } catch (Exception e) {
-            System.err.println("Error en el consumidor: " + e.getMessage());
-        } finally {
-            // Cerrar el consumidor
-            consumer.close();
-            System.out.println("Consumidor cerrado correctamente.");
         }
     }
 }

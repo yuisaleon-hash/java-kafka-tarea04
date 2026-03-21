@@ -1,28 +1,23 @@
+# ====== ETAPA 1: BUILD ======
 FROM maven:3.8.6-openjdk-11-slim AS build
 
-# Directorio de trabajo
 WORKDIR /app
 
-# Copiar archivos del proyecto
 COPY pom.xml .
 COPY src ./src
 
-# Compilar y empaquetar la aplicación
 RUN mvn clean package
 
-# Imagen final
-FROM openjdk:11-jre-slim
+# ====== ETAPA 2: RUNTIME ======
+FROM eclipse-temurin:11-jre
 
-# Directorio de trabajo
 WORKDIR /app
 
-# Copiar los JARs construidos desde la etapa anterior
+# Copiar los JARs desde build
 COPY --from=build /app/target/producer-jar-with-dependencies.jar /app/producer.jar
 COPY --from=build /app/target/consumer-jar-with-dependencies.jar /app/consumer.jar
 
-# Volumen para scripts o configuraciones
 VOLUME /app/config
 
-# Establecer punto de entrada (se sobrescribirá en el docker-compose)
 ENTRYPOINT ["java", "-jar"]
 CMD ["producer.jar"]
