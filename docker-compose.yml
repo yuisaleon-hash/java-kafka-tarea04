@@ -25,9 +25,27 @@ services:
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
     networks:
       - kafka-network
+
+  kafka-setup:
+    image: confluentinc/cp-kafka:7.3.2
+    container_name: kafka-setup
+    depends_on:
+      - kafka
+    networks:
+      - kafka-network
+    entrypoint: [ "/bin/sh", "-c" ]
+    command: >
+      "
+      echo 'Esperando a Kafka...' &&
+      sleep 15 &&
+      kafka-topics --create --if-not-exists --bootstrap-server kafka:9092 --topic TOPICO_ALUMNOS    --partitions 1 --replication-factor 1 &&
+      kafka-topics --create --if-not-exists --bootstrap-server kafka:9092 --topic TOPICO_PROFESORES --partitions 1 --replication-factor 1 &&
+      kafka-topics --create --if-not-exists --bootstrap-server kafka:9092 --topic TOPICO_DIRECTORES --partitions 1 --replication-factor 1 &&
+      echo '✅ Tópicos creados!'
+      "
 
   kafka-ui:
     image: provectuslabs/kafka-ui:latest
@@ -47,10 +65,12 @@ services:
     build: .
     container_name: kafka-producer
     depends_on:
-      - kafka
+      - kafka-setup
     stdin_open: true
     tty: true
-    command: ["/app/producer.jar"]   # ✅ CORREGIDO
+    command: [ "/app/producer.jar" ]
+    ports:                 # <- AGREGAR
+      - "8082:8082"        # <- AGREGAR
     networks:
       - kafka-network
 
@@ -58,8 +78,10 @@ services:
     build: .
     container_name: kafka-consumer
     depends_on:
-      - kafka
-    command: ["/app/consumer.jar"]   # ✅ CORREGIDO
+      - kafka-setup
+    command: [ "/app/consumer.jar" ]
+    ports:                 # <- AGREGAR
+      - "8081:8081"        # <- AGREGAR
     networks:
       - kafka-network
 

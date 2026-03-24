@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Kafka Demo</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 40px auto; padding: 0 20px; }
+        h1 { color: #333; }
+        select, input, button { padding: 8px 12px; margin: 5px; font-size: 14px; }
+        button { background: #0078d4; color: white; border: none; cursor: pointer; border-radius: 4px; }
+        button:hover { background: #005fa3; }
+        .mensaje { padding: 8px 12px; margin: 4px 0; border-radius: 4px; font-size: 14px; }
+        .TOPICO_ALUMNOS    { background: #d4edda; border-left: 4px solid #28a745; }
+        .TOPICO_PROFESORES { background: #cce5ff; border-left: 4px solid #0078d4; }
+        .TOPICO_DIRECTORES { background: #fff3cd; border-left: 4px solid #ffc107; }
+    </style>
+</head>
+<body>
+<h1>Kafka Demo</h1>
+
+<h2>Enviar Mensaje</h2>
+<select id="topico">
+    <option value="TOPICO_ALUMNOS">TOPICO_ALUMNOS</option>
+    <option value="TOPICO_PROFESORES">TOPICO_PROFESORES</option>
+    <option value="TOPICO_DIRECTORES">TOPICO_DIRECTORES</option>
+</select>
+<input type="text" id="mensaje" placeholder="Escribe tu mensaje..." style="width:300px">
+<button onclick="enviar()">Enviar</button>
+<span id="estado"></span>
+
+<h2>Mensajes Recibidos</h2>
+<div id="mensajes"></div>
+
+<script>
+    async function enviar() {
+      const topico  = document.getElementById('topico').value;
+      const mensaje = document.getElementById('mensaje').value.trim();
+      if (!mensaje) return;
+      const res = await fetch('http://localhost:8082/enviar?topico=' + topico, {
+        method: 'POST',
+        body: mensaje
+      });
+      document.getElementById('estado').textContent = res.ok ? 'Enviado!' : 'Error';
+      document.getElementById('mensaje').value = '';
+      setTimeout(() => document.getElementById('estado').textContent = '', 2000);
+    }
+
+    async function cargarMensajes() {
+      try {
+        const res  = await fetch('http://localhost:8081/mensajes');
+        const data = await res.json();
+        const div  = document.getElementById('mensajes');
+        div.innerHTML = '';
+        data.reverse().forEach(function(m) {
+          var topico = m.indexOf('TOPICO_ALUMNOS') >= 0    ? 'TOPICO_ALUMNOS'
+                     : m.indexOf('TOPICO_PROFESORES') >= 0 ? 'TOPICO_PROFESORES'
+                     : 'TOPICO_DIRECTORES';
+          div.innerHTML += '<div class="mensaje ' + topico + '">' + m + '</div>';
+        });
+      } catch(e) {}
+    }
+
+    setInterval(cargarMensajes, 2000);
+    cargarMensajes();
+</script>
+</body>
+</html>
